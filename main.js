@@ -51,6 +51,7 @@ context.beginPath();
 context.arc(32, 32, 24, 0, 2 * Math.PI);
 context.fill();
 context.stroke();
+
 const circleTexture = new CanvasTexture(canvas)
 const annotationSpriteMaterial = new SpriteMaterial({
     transparent: true,
@@ -73,15 +74,7 @@ loader.load(
         shootingAnimation = model.animations[1]
         mixer.clipAction(floatingAnimation).play().timeScale = 0.5
         model.scene.position.y = -1.3
-        model.scene.children.map(obj => obj.children.filter(part => !part.isMesh).map((part, index) => {
-            const annotationSprite = new Sprite(annotationSpriteMaterial)
-            annotationSprite.scale.set(0.05, 0.05, 0.05)
-            annotationSprite.position.copy({ ...part.position, y: part.position.y - 1, z: part.position.z - 0.3 })
-            // add sprite into group
-            sprites.add(annotationSprite)
-        }))
-        // attach group of sprites to model 
-        model.scene.children[1].attach(sprites)
+        attachAnnotationSprites(model)
         scene.add(model.scene)
     },
     () => {
@@ -89,16 +82,21 @@ loader.load(
     },
     error => console.error(error)
 )
+var spritesArray = [];
 
-function animate() {
-    requestAnimationFrame(animate);
-    const delta = clock.getDelta()
-    controls.update()
-    stats.update();
+function attachAnnotationSprites(model) {
+    model.scene.children.map(obj => obj.children.filter(part => !part.isMesh).map((part, index) => {
+        const annotationSprite = new Sprite(annotationSpriteMaterial)
+        annotationSprite.scale.set(0.05, 0.05, 0.05)
+        annotationSprite.position.copy({ ...part.position, y: part.position.y - 1, z: part.position.z - 0.3 })
+        // sprites.add(annotationSprite)
+        part.attach(annotationSprite)
+        spritesArray.push(annotationSprite)
+    }))
+    // scene.add(sprites)
+}
 
-    // run animation
-    if (mixer) mixer.update(delta)
-
+function renderAnnotationSprites(renderer) {
     // render scene + all sprites as transparent
     renderer.autoClear = true;
     annotationSpriteMaterial.opacity = 0.2;
@@ -109,7 +107,19 @@ function animate() {
     renderer.autoClear = false;
     annotationSpriteMaterial.opacity = 1;
     annotationSpriteMaterial.depthTest = true;
-    renderer.render(sprites, camera);
+    spritesArray.map((sprite)=>{renderer.render(sprite, camera);})
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta()
+    controls.update()
+    stats.update();
+
+    // run animation
+    if (mixer) mixer.update(delta)
+
+    renderAnnotationSprites(renderer)
 }
 animate();
 
