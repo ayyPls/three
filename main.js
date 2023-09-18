@@ -1,3 +1,5 @@
+import { Vector2 } from 'three';
+import { Raycaster, Vector3 } from 'three';
 import { Scene, PerspectiveCamera, AxesHelper, WebGLRenderer, AmbientLight, AnimationMixer, Clock, Color, SpriteMaterial, Sprite, CanvasTexture, Group } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -20,7 +22,7 @@ camera.position.y = 1
 camera.position.z = -3
 
 const axesHelper = new AxesHelper(5);
-scene.add(axesHelper);
+// scene.add(axesHelper);
 
 const stats = new Stats()
 document.body.appendChild(stats.dom)
@@ -60,8 +62,6 @@ const annotationSpriteMaterial = new SpriteMaterial({
     map: circleTexture,
 })
 
-let sprites = new Group();
-
 const modelUrl = '/models/wither_boss/source/witherBoss.gltf';
 
 const loader = new GLTFLoader()
@@ -76,6 +76,8 @@ loader.load(
         model.scene.position.y = -1.3
         attachAnnotationSprites(model)
         scene.add(model.scene)
+        console.log(scene);
+        console.log(spritesArray);
     },
     () => {
         // on progress
@@ -107,7 +109,7 @@ function renderAnnotationSprites(renderer) {
     renderer.autoClear = false;
     annotationSpriteMaterial.opacity = 1;
     annotationSpriteMaterial.depthTest = true;
-    spritesArray.map((sprite)=>{renderer.render(sprite, camera);})
+    spritesArray.map((sprite) => { renderer.render(sprite, camera); })
 }
 
 function animate() {
@@ -117,12 +119,38 @@ function animate() {
     stats.update();
 
     // run animation
-    if (mixer) mixer.update(delta)
+    // if (mixer) mixer.update(delta)
 
     renderAnnotationSprites(renderer)
 }
 animate();
 
+
+
+const onWindowClick = (e) => {
+    // console.log(spritesArray);
+    e.preventDefault()
+    const raycaster = new Raycaster()
+    let mouse = new Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera)
+
+    // raycaster.camera = camera
+    // raycaster.setFromCamera({x: e.offsetX, y: e.offsetY}, camera)
+    // raycaster.setFromCamera({ x: e.offsetX, y: e.offsetY }, camera)
+    const intersects = raycaster.intersectObjects(scene.children);
+    for (let i = 0; i < intersects.length; i++) {
+        // You can do anything you want here, this is just an example to make the hovered object transparent
+        // const newMaterial = intersects[i].object.material.clone();
+        // newMaterial.transparent = true;
+        // newMaterial.opacity = 0.5;
+        // intersects[i].object.material = newMaterial;
+        if(intersects[i].object.type == 'Sprite'){
+            console.log(intersects[i]);
+        }
+    }
+}
 
 const onWindowResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight
@@ -132,3 +160,4 @@ const onWindowResize = () => {
     renderer.setPixelRatio(window.devicePixelRatio);
 }
 window.addEventListener('resize', onWindowResize, false)
+window.addEventListener('click', onWindowClick, false)
