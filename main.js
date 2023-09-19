@@ -4,7 +4,7 @@ import { Scene, PerspectiveCamera, AxesHelper, WebGLRenderer, AmbientLight, Anim
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import Stats from 'three/examples/jsm/libs/stats.module'
-
+import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer'
 // TODO: наезд камеры при первом рендере 
 // TODO: background of scene (skybox?) https://threejs.org/manual/#en/backgrounds
 
@@ -24,8 +24,8 @@ camera.position.z = -3
 const axesHelper = new AxesHelper(5);
 // scene.add(axesHelper);
 
-const stats = new Stats()
-document.body.appendChild(stats.dom)
+// const stats = new Stats()
+// document.body.appendChild(stats.dom)
 
 
 const renderer = new WebGLRenderer();
@@ -33,10 +33,17 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.domElement.className = 'renderer'
 document.body.appendChild(renderer.domElement);
 
+const annotationRenderer = new CSS2DRenderer();
+annotationRenderer.setSize(window.innerWidth, window.innerHeight);
+annotationRenderer.domElement.className = 'annotationRenderer'
+annotationRenderer.domElement.style.position = 'absolute'
+annotationRenderer.domElement.style.top = 0
+document.body.appendChild(annotationRenderer.domElement);
+
 const light = new AmbientLight(0x404040, 100); // soft white light
 scene.add(light);
 
-const controls = new OrbitControls(camera, renderer.domElement) // bind controls to 2d renderer to work if you have some 2d to render
+const controls = new OrbitControls(camera, annotationRenderer.domElement) // bind controls to 2d renderer to work if you have some 2d to render
 controls.enablePan = false; // disable moving model with ctrl+mouse
 controls.enableDamping = true; // smooth camera rotation
 controls.dampingFactor = 0.05;
@@ -63,6 +70,7 @@ const annotationSpriteMaterial = new SpriteMaterial({
 })
 
 const modelUrl = '/models/wither_boss/source/witherBoss.gltf';
+
 
 const loader = new GLTFLoader()
 loader.load(
@@ -91,11 +99,9 @@ function attachAnnotationSprites(model) {
         const annotationSprite = new Sprite(annotationSpriteMaterial)
         annotationSprite.scale.set(0.05, 0.05, 0.05)
         annotationSprite.position.copy({ ...part.position, y: part.position.y - 1, z: part.position.z - 0.3 })
-        // sprites.add(annotationSprite)
         part.attach(annotationSprite)
         spritesArray.push(annotationSprite)
     }))
-    // scene.add(sprites)
 }
 
 function renderAnnotationSprites(renderer) {
@@ -110,44 +116,49 @@ function renderAnnotationSprites(renderer) {
     annotationSpriteMaterial.opacity = 1;
     annotationSpriteMaterial.depthTest = true;
     spritesArray.map((sprite) => { renderer.render(sprite, camera); })
+    annotationRenderer.render(scene, camera)
 }
 
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta()
     controls.update()
-    stats.update();
+    // stats.update();
 
     // run animation
-    // if (mixer) mixer.update(delta)
+    if (mixer) mixer.update(delta)
 
     renderAnnotationSprites(renderer)
 }
 animate();
 
 
-
+let openedAnnotation;
 const onWindowClick = (e) => {
-    // console.log(spritesArray);
     e.preventDefault()
+    if (openedAnnotation) {
+        scene.remove(openedAnnotation)
+    }
     const raycaster = new Raycaster()
     let mouse = new Vector2();
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera)
 
-    // raycaster.camera = camera
-    // raycaster.setFromCamera({x: e.offsetX, y: e.offsetY}, camera)
-    // raycaster.setFromCamera({ x: e.offsetX, y: e.offsetY }, camera)
     const intersects = raycaster.intersectObjects(scene.children);
     for (let i = 0; i < intersects.length; i++) {
         // You can do anything you want here, this is just an example to make the hovered object transparent
-        // const newMaterial = intersects[i].object.material.clone();
-        // newMaterial.transparent = true;
-        // newMaterial.opacity = 0.5;
-        // intersects[i].object.material = newMaterial;
-        if(intersects[i].object.type == 'Sprite'){
-            console.log(intersects[i]);
+        const intersectedObject = intersects[i].object
+        if (intersectedObject.type == 'Sprite') {
+            const annotationContainer = document.createElement('div')
+            annotationContainer.id = 'annotationContainer'
+            annotationContainer.innerText = intersectedObject.parent.name
+            
+            openedAnnotation = new CSS2DObject(annotationContainer)
+            openedAnnotation.position.copy(intersectedObject.parent.position)
+            openedAnnotation.position.setY(intersectedObject.parent.position.y - 0.8)
+            openedAnnotation.position.setZ(intersectedObject.parent.position.z - 0.3)
+            scene.add(openedAnnotation)
         }
     }
 }
