@@ -3,12 +3,30 @@ import { Raycaster, Vector3 } from 'three';
 import { Scene, PerspectiveCamera, AxesHelper, WebGLRenderer, AmbientLight, AnimationMixer, Clock, Color, SpriteMaterial, Sprite, CanvasTexture, Group } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import Stats from 'three/examples/jsm/libs/stats.module'
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer'
-import gsap from 'gsap';
+import gsap, { Power2 } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+gsap.registerPlugin(ScrollTrigger)
 
+const scenePositions = [
+    { x: -4, z: -4, y: 4, targetName: "head1" },
+    { x: 2, z: 2, y: -2, targetName: "head2" },
+    { x: -1, z: 1.8, y: -1.5, targetName: "head3" },
+    { x: 0.5, z: 1, y: -1.5, targetName: "upperBodyPart2" },
+]
 
+// Object_2 - зельеварилка
+// Object_3 - все сундуки
+// Object_4 - все фрукты 
+// Object_5, 6, 7- деревья
+// Object 8 - лампы
+// Object 14 - ender chest
+// Object 15 - лестницы
+// Object 17 -тыква
+// Object 17 -тыква
 // TODO: наезд камеры при первом рендере 
 // TODO: background of scene (skybox?) https://threejs.org/manual/#en/backgrounds
 
@@ -20,11 +38,15 @@ const scene = new Scene();
 scene.background = new Color(0xc5c5c5) // set scene background color
 
 const camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.setY(4)
+const cameraGroup = new Group()
+cameraGroup.name = "cameraGroup"
+scene.add(cameraGroup)
+cameraGroup.add(camera)
+
 // set camera position
-camera.position.x = 3
+camera.position.x = 10
 camera.position.y = 4
-camera.position.z = -2
+camera.position.z = 10
 
 const gridHelper = new GridHelper()
 scene.add(gridHelper)
@@ -32,88 +54,69 @@ scene.add(gridHelper)
 const axesHelper = new AxesHelper(5);
 scene.add(axesHelper);
 
-// const stats = new Stats()
-// document.body.appendChild(stats.dom)
-
-
 const renderer = new WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.domElement.className = 'renderer'
 document.body.appendChild(renderer.domElement);
 
-// const annotationRenderer = new CSS2DRenderer();
-// annotationRenderer.setSize(window.innerWidth, window.innerHeight);
-// annotationRenderer.domElement.className = 'annotationRenderer'
-// annotationRenderer.domElement.style.position = 'absolute'
-// annotationRenderer.domElement.style.top = 0
-// document.body.appendChild(annotationRenderer.domElement);
-
-const light = new PointLight()
-light.position.set(0, 2, 0)
+// const light = new PointLight()
+// light.position.set(0, 2, 0)
+// scene.add(light)
+const light = new AmbientLight()
+// light.position.set(0, 2, 0)
 scene.add(light)
-// const light = new AmbientLight(0x404040, 100); // soft white light
-// scene.add(light);
 
 const controls = new OrbitControls(camera, renderer.domElement) // bind controls to 2d renderer to work if you have some 2d to render
-// controls.enablePan = false; // disable moving model with ctrl+mouse
+controls.enablePan = false; // disable moving model with ctrl+mouse
 controls.enableDamping = true; // smooth camera rotation
 controls.dampingFactor = 0.05;
-// controls.maxDistance = 5; // min and max distance for camera zoom
-// controls.minDistance = 1.5;
+controls.enableZoom = false
+// controls.screenSpacePanning = true
 
-// let canvas = document.createElement('canvas');
-// canvas.width = 64;
-// canvas.height = 64; let context = canvas.getContext('2d');
-// context.lineStyle = 'black';
-// context.lineWidth = 6;
-// context.fillStyle = 'white';
-// context.beginPath();
-// context.arc(32, 32, 24, 0, 2 * Math.PI);
-// context.fill();
-// context.stroke();
+// controls.addEventListener("change", e=>console.log(e))
+// controls.autoRotate = true
 
-// const circleTexture = new CanvasTexture(canvas)
-// const annotationSpriteMaterial = new SpriteMaterial({
-//     transparent: true,
-//     opacity: 1,
-//     depthTest: true,
-//     map: circleTexture,
-// })
+// controls.mo
+// controls.autoRotateSpeed = -1
+// const controls = new FirstPersonControls(camera, renderer.domElement) // bind controls to 2d renderer to work if you have some 2d to render
+// controls.lookSpeed = 0.01
+// controls.movementSpeed = 5
 
-const modelUrl = '/models/end_city/scene.gltf';
+// const modelUrl = '/models/end_city/scene.gltf';
+const modelUrl = '/models/wither_boss/source/witherBoss.gltf';
+
 
 const timeline = gsap.timeline()
 
-let currentPosition = 0
+// const scrollTrigger = ScrollTrigger.scrollerProxy(renderer.domElement, {
+//     scrollTop(value){
+        
+//     }
+// })
 
+let currentPosition = 0
+// ,  onUpdate: () => controls.target = getElementByName(model.scene, "head1").position
 const loader = new GLTFLoader()
 loader.load(
     modelUrl,
     model => {
         mixer = new AnimationMixer(model.scene)
-        // bind animations
-        // floatingAnimation = model.animations[0]
-        // shootingAnimation = model.animations[1]
-        // mixer.clipAction(floatingAnimation).play().timeScale = 0.5
-        // model.scene.position.y = -1.3
-        // attachAnnotationSprites(model)
-        model.scene.scale.set(4, 4, 4)
-        model.scene.position.setY(-1)
-        // model.scene.traverse(obj => obj.name == "Object_2" && scene.add(obj))
-
-        // arr.map(obj=>scene.remove(obj))
+        controls.target = getElementByName(model.scene, "head1").position //sets orbit controls target
         scene.add(model.scene)
-        // gsap.to(controls.target, {...getElementByName(model.scene, "Object_20").position, duration: 3})
-        // gsap.to({}, {duration:2, onUpdate: ()=>{camera.quaternion.slerp(getElementByName(model.scene, "Sketchfab_model").quaternion, 20)}})
-        // console.log(getElementByName(model.scene, "Object_20"));
-
-        // console.log(scene);
-        // console.log(spritesArray);
-
-        // timeline.to(camera.position, {
-        //     z: 14,
-        //     duration: 1.5,
-        // })
+        timeline
+            .to(camera.position, {
+                x: -4, z: -4, y: 4, ease: Power2.easeInOut, scrollTrigger: {
+                    trigger: renderer.domElement,
+                    scrub: true,
+                    onEnter: e => {
+                        camera.updateProjectionMatrix()
+                    },
+                    
+                }
+            })
+        // .to(camera.position, { x: 2, y: 2, z: -2, duration: 2, onUpdate: () => controls.target = getElementByName(model.scene, "head2").position })
+        // .to(camera.position, { x: -1, y: 1.8, z: -1.5, duration: 2, onUpdate: () => controls.target = getElementByName(model.scene, "head3").position })
+        // .to(camera.position, { x: 0.5, y: 1, z: -1.5, duration: 2, onUpdate: () => controls.target = getElementByName(model.scene, "upperBodyPart2").position })
     },
     () => {
         // on progress
@@ -121,6 +124,11 @@ loader.load(
     error => console.error(error)
 )
 
+const cursor = { x: 0, y: 0 }
+window.addEventListener('mousemove', (event) => {
+    cursor.x = event.clientX / window.innerWidth - 0.5
+    cursor.y = event.clientY / window.innerHeight - 0.5
+})
 
 function getElementByName(object3d, name) {
     let result
@@ -128,82 +136,28 @@ function getElementByName(object3d, name) {
         if (obj.name == name) {
             result = obj
             return;
-        } else console.log(obj.name, obj.quaternion);
+        }
     })
 
     return result
 }
 
-
-// function attachAnnotationSprites(model) {
-//     model.scene.children.map(obj => obj.children.filter(part => !part.isMesh).map((part, index) => {
-//         const annotationSprite = new Sprite(annotationSpriteMaterial)
-//         annotationSprite.scale.set(0.05, 0.05, 0.05)
-//         annotationSprite.position.copy({ ...part.position, y: part.position.y - 1, z: part.position.z - 0.3 })
-//         part.attach(annotationSprite)
-//         spritesArray.push(annotationSprite)
-//     }))
-// }
-
-// function renderAnnotationSprites(renderer) {
-//     // render scene + all sprites as transparent
-//     renderer.autoClear = true;
-//     annotationSpriteMaterial.opacity = 0.2;
-//     annotationSpriteMaterial.depthTest = false;
-//     renderer.render(scene, camera);
-
-//     // render only front sprites
-//     renderer.autoClear = false;
-//     annotationSpriteMaterial.opacity = 1;
-//     annotationSpriteMaterial.depthTest = true;
-//     spritesArray.map((sprite) => { renderer.render(sprite, camera); })
-//     annotationRenderer.render(scene, camera)
-// }
-
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta()
     controls.update()
-    // stats.update();
+
+    const parallaxX = cursor.x * 0.5
+    const parallaxY = - cursor.y * 0.5
+    cameraGroup.position.x += (parallaxX - cameraGroup.position.x) * 5 * delta
+    cameraGroup.position.y += (parallaxY - cameraGroup.position.y) * 5 * delta
 
     // run animation
     if (mixer) mixer.update(delta)
 
     renderer.render(scene, camera)
-    // renderAnnotationSprites(renderer)
 }
 animate();
-
-
-// let openedAnnotation;
-// const onWindowClick = (e) => {
-//     e.preventDefault()
-//     if (openedAnnotation) {
-//         scene.remove(openedAnnotation)
-//     }
-//     const raycaster = new Raycaster()
-//     let mouse = new Vector2();
-//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-//     raycaster.setFromCamera(mouse, camera)
-
-//     const intersects = raycaster.intersectObjects(scene.children);
-//     for (let i = 0; i < intersects.length; i++) {
-//         // You can do anything you want here, this is just an example to make the hovered object transparent
-//         const intersectedObject = intersects[i].object
-//         if (intersectedObject.type == 'Sprite') {
-//             const annotationContainer = document.createElement('div')
-//             annotationContainer.id = 'annotationContainer'
-//             annotationContainer.innerText = intersectedObject.parent.name
-
-//             openedAnnotation = new CSS2DObject(annotationContainer)
-//             openedAnnotation.position.copy(intersectedObject.parent.position)
-//             openedAnnotation.position.setY(intersectedObject.parent.position.y - 0.8)
-//             openedAnnotation.position.setZ(intersectedObject.parent.position.z - 0.3)
-//             scene.add(openedAnnotation)
-//         }
-//     }
-// }
 
 const onWindowResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight
@@ -213,12 +167,5 @@ const onWindowResize = () => {
     renderer.setPixelRatio(window.devicePixelRatio);
 }
 
-
-function onScrollScene(e) {
-    // TODO: change current camera position number
-    e.preventDefault()
-}
-
-
 window.addEventListener('resize', onWindowResize, false)
-window.addEventListener('scroll', onScrollScene, false)
+// window.addEventListener('wheel', onScrollScene, false)
