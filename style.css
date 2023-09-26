@@ -1,9 +1,13 @@
 body {
     margin: 0;
+    height: calc(10 * 100vh);
+    overflow-x: hidden;
 }
-#annotationContainer{
-    position: absolute;
+
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
     background-color: white;
     border: 1px solid pink;
-
 }
