@@ -1,9 +1,21 @@
 body {
     margin: 0;
+    padding: 0;
+    height: calc(10 * 100vh);
 }
-#annotationContainer{
-    position: absolute;
+
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
     background-color: white;
     border: 1px solid pink;
+}
 
+progress {
+    position: fixed;
+    top: 50%;
+    left: 40%;
+    z-index: 100;
+    width: 20%;
 }
