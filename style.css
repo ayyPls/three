@@ -2,6 +2,7 @@ body {
     margin: 0;
     padding: 0;
     height: calc(10 * 100vh);
+    overflow: hidden;
 }
 
 canvas {
@@ -18,4 +19,25 @@ progress {
     left: 40%;
     z-index: 100;
     width: 20%;
+}
+
+.annotationContainer:not(:empty) {
+    color: white;
+    background-color: rgba(1, 2, 3, 0.5);
+    padding: 40px;
+    border-radius: 4px;
+    max-width: 200px;
+    margin-left: 150px;
+}
+
+.annotationContainer:before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    margin-top: -7px;
+    left: -5px;
+    border: solid 7px transparent;
+    border-right-color: rgba(1, 2, 3, 0.5);
+    z-index: 1;
+    transform: rotate(135deg);
 }

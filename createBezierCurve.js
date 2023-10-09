@@ -1,4 +1,4 @@
-import { BufferGeometry, CubicBezierCurve3, Line, LineBasicMaterial, Mesh, MeshBasicMaterial, SphereGeometry, Vector3 } from "three";
+import { BufferGeometry, CubicBezierCurve3, Line, LineBasicMaterial, Mesh, MeshBasicMaterial, SphereGeometry } from "three";
 
 function getRandomColor() {
     var letters = '0123456789ABCDEF';
@@ -9,7 +9,7 @@ function getRandomColor() {
     return color;
 }
 
-const testgeo = new SphereGeometry(0.5, 32, 16)
+const testgeo = new SphereGeometry(0.05, 32, 16)
 // draw points and curve itself
 export function createBezierCurve(points, scene) {
     // Создаем экземпляр класса THREE.CubicBezierCurve3
